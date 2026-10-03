@@ -1,0 +1,4 @@
+# never commit these
+nextdns
+*.pem
+*.tar.gz
