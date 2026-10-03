@@ -220,6 +220,8 @@ You can keep the device on the charger, or run it on battery and charge when the
 
 ASUS MeMO Pad 7 (ME176C(X)), Intel Atom Z3745, unofficial LineageOS 16.0 (Android 9), Magisk 26.4, NextDNS CLI 1.47.3 (`linux_386`). The monitor ran on OpenBSD 7.9 with curl 8.21. The self-test passes under OpenBSD's `sh` and Debian's `dash`.
 
+Full write-up: [an old tablet as the house DNS server](https://nevrast.xyz/nextdns-tutorial.html)
+
 ## License
 
 MIT. See `LICENSE`. The NextDNS CLI is a separate project under its own license.
