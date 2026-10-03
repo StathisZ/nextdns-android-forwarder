@@ -18,6 +18,10 @@
 #   NAME           what to call the device in alerts
 # Test the down path with SEARCH=no-such-heartbeat.
 
+# curl lives in /usr/local/bin on the BSDs; cron's default PATH excludes it.
+# Appended, not prepended, so the self-test's stub curl still wins.
+PATH="$PATH:/usr/local/bin:/usr/local/sbin"; export PATH
+
 : "${PROFILE:?set PROFILE to your NextDNS profile ID}"
 : "${SEARCH:?set SEARCH to your heartbeat domain}"
 HEADER_FILE="${HEADER_FILE:-/etc/nextdns/api-header}"

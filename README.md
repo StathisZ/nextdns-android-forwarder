@@ -141,6 +141,7 @@ The monitoring machine runs `heartbeat-monitor.sh` once an hour. Each run makes 
 - It must be on all the time. A VPS, a home server, a NAS or a Raspberry Pi all work.
 - It needs outbound HTTPS to `api.nextdns.io` and to your ntfy server.
 - It needs cron, a POSIX `sh` and `curl` 7.55 or later. The script reads the API key with `curl -H @file`, which older versions lack.
+- Cron runs with a minimal `PATH`. On the BSDs that leaves out `/usr/local/bin`, where `curl` lives, so the script appends it. Cron may also set `HOME` to something unexpected, which moves the default state folder. Set `STATE_DIR` in the crontab line to be sure.
 - Root isn't required. The default file locations below assume root. Point `HEADER_FILE`, `NTFY_URL_FILE` and `STATE_DIR` elsewhere to run it as an ordinary user.
 
 ### What it doesn't need
@@ -163,8 +164,8 @@ If you self-host ntfy, prefer a monitoring machine other than the ntfy server. O
 | `/root/heartbeat-monitor.sh` | the script | 0700 |
 | `/etc/nextdns/api-header` | one line: `X-Api-Key: <key>` | 0600 |
 | `/etc/nextdns/ntfy-url` | the full ntfy topic URL | 0600 |
-| `~/.heartbeat-monitor/state` | last result: `up`, `down` or `error` | created by the script |
-| `~/.heartbeat-monitor/battery` | last battery reading and alert state | created by the script |
+| `$STATE_DIR/state` | last result: `up`, `down` or `error` | created by the script |
+| `$STATE_DIR/battery` | last battery reading and alert state | created by the script |
 
 The API key gives full control of your NextDNS account, including filtering settings and logs. Keep it on a machine you trust, readable by root only. Never put it on the forwarder.
 
@@ -191,14 +192,22 @@ PROFILE=abc123 SEARCH=no-such-heartbeat sh /root/heartbeat-monitor.sh   # "DNS f
 PROFILE=abc123 SEARCH=heartbeat.example.com sh /root/heartbeat-monitor.sh   # "DNS forwarder is back"
 ```
 
-The first run should print nothing and leave `up` in `~/.heartbeat-monitor/state`. A result of `error` means the API key or the network path is wrong.
+The first run should print nothing and leave `up` in the state file. A result of `error` means the API key, the network path or `curl` is wrong.
+
+A manual run uses your shell's environment, not cron's. Test once the way cron will run it, with a minimal `PATH`:
+
+```
+env -i PATH=/bin:/usr/bin HOME=/root PROFILE=abc123 SEARCH=heartbeat.example.com STATE_DIR=/root/.heartbeat-monitor /bin/sh /root/heartbeat-monitor.sh
+```
+
+This catches the case where `curl` isn't on cron's `PATH`. Otherwise the check fails, and the alert that should report the failure fails with it.
 
 ### Schedule
 
 Add it to root's crontab:
 
 ```
-17 * * * * PROFILE=abc123 SEARCH=heartbeat.example.com /bin/sh /root/heartbeat-monitor.sh
+17 * * * * PROFILE=abc123 SEARCH=heartbeat.example.com STATE_DIR=/root/.heartbeat-monitor /bin/sh /root/heartbeat-monitor.sh
 ```
 
 Hourly checks mean an alert arrives one to two hours after a failure. That suits a DNS server with a secondary behind it. It's 24 API calls a day.
